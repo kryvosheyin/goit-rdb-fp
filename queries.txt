@@ -1,0 +1,197 @@
+Task 1. 
+
+CREATE SCHEMA IF NOT EXISTS `pandemic` ;
+
+USE pandemic; 
+
+
+Task 2. 
+
+Creating two tables in 3NF 
+
+
+USE pandemic; 
+
+CREATE TABLE `Country` (
+  `ID` INT NOT NULL AUTO_INCREMENT,
+  `Entity` VARCHAR(45) NOT NULL,
+  `Code` VARCHAR(45) NULL,
+  UNIQUE (Entity, Code),
+  PRIMARY KEY (`ID`));
+  
+
+INSERT INTO Country (Entity, Code)
+SELECT DISTINCT entity, code FROM infectious_cases;
+
+CREATE TABLE IF NOT EXISTS Disease_Data (
+    Country_ID INT,
+    Year INT,
+    Disease_Type VARCHAR(50),
+    Cases FLOAT,
+    PRIMARY KEY (Country_ID, Year, Disease_Type),
+    FOREIGN KEY (Country_ID) REFERENCES Country(ID)
+);
+
+INSERT INTO Disease_Data (Country_ID, Year, Disease_Type, Cases)
+SELECT
+    C.ID,
+    IC.Year,
+    'Number_yaws' AS Disease_Type,
+    CAST(IC.Number_yaws AS FLOAT) AS Cases
+FROM
+    infectious_cases AS IC
+JOIN
+    Country AS C ON IC.Entity = C.Entity AND IC.Code = C.Code
+
+UNION ALL
+
+SELECT
+    C.ID,
+    IC.Year,
+    'polio_cases' AS Disease_Type,
+    CAST(IC.polio_cases AS FLOAT) AS Cases
+FROM
+    infectious_cases AS IC
+JOIN
+    Country AS C ON IC.Entity = C.Entity AND IC.Code = C.Code
+
+UNION ALL
+
+SELECT
+    C.ID,
+    IC.Year,
+    'cases_guinea_worm' AS Disease_Type,
+    CAST(IC.cases_guinea_worm AS FLOAT) AS Cases
+FROM
+    infectious_cases AS IC
+JOIN
+    Country AS C ON IC.Entity = C.Entity AND IC.Code = C.Code
+
+UNION ALL
+
+SELECT
+    C.ID,
+    IC.Year,
+    'Number_rabies' AS Disease_Type,
+    CAST(IC.Number_rabies AS FLOAT) AS Cases
+FROM
+    infectious_cases AS IC
+JOIN
+    Country AS C ON IC.Entity = C.Entity AND IC.Code = C.Code
+
+UNION ALL
+
+SELECT
+    C.ID,
+    IC.Year,
+    'Number_malaria' AS Disease_Type,
+    CAST(IC.Number_malaria AS FLOAT) AS Cases
+FROM
+    infectious_cases AS IC
+JOIN
+    Country AS C ON IC.Entity = C.Entity AND IC.Code = C.Code
+
+UNION ALL
+
+SELECT
+    C.ID,
+    IC.Year,
+    'Number_hiv' AS Disease_Type,
+    CAST(IC.Number_hiv AS FLOAT) AS Cases
+FROM
+    infectious_cases AS IC
+JOIN
+    Country AS C ON IC.Entity = C.Entity AND IC.Code = C.Code
+
+UNION ALL
+
+SELECT
+    C.ID,
+    IC.Year,
+    'Number_tuberculosis' AS Disease_Type,
+    CAST(IC.Number_tuberculosis AS FLOAT) AS Cases
+FROM
+    infectious_cases AS IC
+JOIN
+    Country AS C ON IC.Entity = C.Entity AND IC.Code = C.Code
+
+UNION ALL
+
+SELECT
+    C.ID,
+    IC.Year,
+    'Number_smallpox' AS Disease_Type,
+    CAST(IC.Number_smallpox AS FLOAT) AS Cases
+FROM
+    infectious_cases AS IC
+JOIN
+    Country AS C ON IC.Entity = C.Entity AND IC.Code = C.Code
+
+UNION ALL
+
+SELECT
+    C.ID,
+    IC.Year,
+    'Number_cholera_cases' AS Disease_Type,
+    CAST(IC.Number_cholera_cases AS FLOAT) AS Cases
+FROM
+    infectious_cases AS IC
+JOIN
+    Country AS C ON IC.Entity = C.Entity AND IC.Code = C.Code;
+
+
+Task 3. 
+
+USE pandemic;
+
+SELECT 
+	dd.Country_ID, 
+    c.entity,
+    c.Code,
+	dd.Disease_Type, 
+    ROUND(AVG(dd.Cases), 2) as average_cases, 
+    ROUND(MIN(dd.Cases)) as min_cases, 
+    ROUND(MAX(dd.Cases)) as max_cases, 
+    ROUND(SUM(dd.Cases)) as sum_cases
+FROM Disease_Data dd
+LEFT JOIN Country c on dd.Country_ID = c.id
+WHERE Cases > 0 AND Disease_Type = 'Number_rabies' AND c.Code !=''
+GROUP BY Country_ID
+ORDER BY average_cases DESC
+LIMIT 10;
+
+
+Task 4. 
+
+select distinct year as unique_year, 
+	MAKEDATE(year, 1) as year_start,
+	CURDATE() as curr_date, 
+    YEAR(NOW())-year as year_diff
+from infectious_cases;
+
+
+Task 5. 
+
+use pandemic; 
+
+DELIMITER //
+
+DROP FUNCTION IF EXISTS CalculateYearsDiff;
+
+CREATE FUNCTION CalculateYearsDiff(original_year INT)
+RETURNS INT
+DETERMINISTIC 
+NO SQL 
+BEGIN 
+	RETURN YEAR(NOW()) - original_year;
+END //
+
+DELIMITER ; 
+
+
+select distinct year as unique_year, 
+	MAKEDATE(year, 1) as year_start,
+	CURDATE() as curr_date, 
+    CalculateYearsDiff(year)
+from infectious_cases
+Order By year;
